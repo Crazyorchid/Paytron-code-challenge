@@ -11,6 +11,7 @@ describe('When the user requests the records for a specific payment', () => {
       currency: 'AUD',
       amount: 2000,
     };
+    // console.log(paymentId);
     const getPaymentMock = jest
       .spyOn(payments, 'getPayment')
       .mockResolvedValueOnce(mockPayment);

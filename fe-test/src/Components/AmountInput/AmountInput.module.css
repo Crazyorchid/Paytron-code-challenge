@@ -1,0 +1,15 @@
+.rateInput {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  max-width: 400px;
+  padding: 10px 0 10px 0;
+  font-family: 'Nunito Sans';
+  color: #0b1a3f;
+}
+.rateInput input {
+  width: 380px;
+  height: 30px;
+  margin: 5px 0 5px 0;
+  font-size: 18px;
+}

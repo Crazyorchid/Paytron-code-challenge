@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DropDown from '../../Components/DropDown';
 import ProgressBar from '../../Components/ProgressBar';
 import Loader from '../../Components/Loader';
+import AmountInput from '../../Components/AmountInput';
 
 import { useAnimationFrame } from '../../Hooks/useAnimationFrame';
+import { calculateRate } from '../../Hooks/calculateRate';
 import { ReactComponent as Transfer } from '../../Icons/Transfer.svg';
 
 import classes from './Rates.module.css';
@@ -16,21 +18,47 @@ let countries = CountryData.CountryCodes;
 const Rates = () => {
   const [fromCurrency, setFromCurrency] = useState('AU');
   const [toCurrency, setToCurrency] = useState('US');
-
   const [exchangeRate, setExchangeRate] = useState(0.7456);
   const [progression, setProgression] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [amount, setAmount] = useState(0);
 
-  const Flag = ({ code }) => <img alt={code || ''} src={`/img/flags/${code || ''}.svg`} width="20px" className={classes.flag} />;
+  const Flag = ({ code }) => (
+    <img
+      alt={code || ''}
+      src={`/img/flags/${code || ''}.svg`}
+      width='20px'
+      className={classes.flag}
+    />
+  );
 
   const fetchData = async () => {
+    const sellCurrency = countryToCurrency[fromCurrency];
+    const buyCurrency = countryToCurrency[toCurrency];
     if (!loading) {
       setLoading(true);
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const url = `${process.env.REACT_APP_API_ENDPOINT}?sellCurrency=${sellCurrency}&buyCurrency=${buyCurrency}`;
+      try {
+        const response = await fetch(url);
+        const responseJson = await response.json();
+        if (responseJson.retailRate) {
+          setExchangeRate(responseJson.retailRate);
+        } else {
+          setExchangeRate(NaN);
+        }
+      } catch (error) {
+        console.log(error);
+      }
 
       setLoading(false);
     }
+  };
+  useEffect(() => {
+    fetchData(fromCurrency, toCurrency);
+  }, [fromCurrency, toCurrency]);
+
+  const inputChangeHandler = (e) => {
+    setAmount(e);
   };
 
   // Demo progress bar moving :)
@@ -55,7 +83,11 @@ const Rates = () => {
               leftIcon={<Flag code={fromCurrency} />}
               label={'From'}
               selected={countryToCurrency[fromCurrency]}
-              options={countries.map(({ code }) => ({ option: countryToCurrency[code], key: code, icon: <Flag code={code} /> }))}
+              options={countries.map(({ code }) => ({
+                option: countryToCurrency[code],
+                key: code,
+                icon: <Flag code={code} />,
+              }))}
               setSelected={(key) => {
                 setFromCurrency(key);
               }}
@@ -68,7 +100,9 @@ const Rates = () => {
               <Transfer height={'25px'} />
             </div>
 
-            <div className={classes.rate}>{exchangeRate}</div>
+            <div className={classes.rate}>
+              {exchangeRate !== undefined ? exchangeRate : 0}
+            </div>
           </div>
 
           <div>
@@ -76,7 +110,11 @@ const Rates = () => {
               leftIcon={<Flag code={toCurrency} />}
               label={'To'}
               selected={countryToCurrency[toCurrency]}
-              options={countries.map(({ code }) => ({ option: countryToCurrency[code], key: code, icon: <Flag code={code} /> }))}
+              options={countries.map(({ code }) => ({
+                option: countryToCurrency[code],
+                key: code,
+                icon: <Flag code={code} />,
+              }))}
               setSelected={(key) => {
                 setToCurrency(key);
               }}
@@ -84,8 +122,16 @@ const Rates = () => {
             />
           </div>
         </div>
+        <div>
+          <AmountInput inputChangeHandler={inputChangeHandler} value={amount} />
+          Converted Result: {calculateRate(amount, exchangeRate)}
+        </div>
 
-        <ProgressBar progress={progression} animationClass={loading ? classes.slow : ''} style={{ marginTop: '20px' }} />
+        <ProgressBar
+          progress={progression}
+          animationClass={loading ? classes.slow : ''}
+          style={{ marginTop: '20px' }}
+        />
 
         {loading && (
           <div className={classes.loaderWrapper}>
