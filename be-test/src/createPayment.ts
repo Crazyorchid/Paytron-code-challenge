@@ -1,8 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { buildResponse, parseInput } from './lib/apigateway';
 import { createPayment, Payment } from './lib/payments';
-import { DynamoDB, PutItemInput } from '@aws-sdk/client-dynamodb';
-import { marshall } from '@aws-sdk/util-dynamodb';
 import { randomUUID } from 'crypto';
 
 export const handler = async (
@@ -10,6 +8,10 @@ export const handler = async (
 ): Promise<APIGatewayProxyResult> => {
   const payment = parseInput(event.body || '{}') as Payment;
   payment.id = randomUUID();
-  await createPayment(payment);
-  return buildResponse(201, { result: payment.id });
+  try {
+    await createPayment(payment);
+    return buildResponse(201, { result: payment.id });
+  } catch (error) {
+    return buildResponse(442, { result: 'Unprocessable Entity response' });
+  }
 };
